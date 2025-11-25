@@ -1,0 +1,154 @@
+/* Estilos mejorados para el gráfico de barras */
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  height: 220px; /* Altura fija para asegurar visualización */
+  width: 100%;
+  padding-top: 10px;
+}
+
+.chart-bars-area {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex: 1;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1); /* Color de borde más suave */
+  gap: 8px;
+  min-height: 150px; /* Asegurar altura mínima para las barras */
+}
+
+.chart-column-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+  padding: 0 4px; /* Aumentar área de hover */
+  min-width: 40px; /* Asegurar área mínima de hover */
+  z-index: 1; /* Z-index base */
+}
+
+.chart-bar-stack {
+  width: 100%;
+  max-width: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column-reverse; /* Apilar desde abajo */
+  justify-content: flex-start;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.05); /* Fondo sutil para el track */
+  position: relative;
+  transition: all 0.3s ease;
+  pointer-events: auto; /* Asegurar que reciba eventos */
+}
+
+.chart-column-group:hover .chart-bar-stack {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scaleY(1.02);
+}
+
+/* Asegurar que toda la columna sea hoverable */
+.chart-column-group:hover {
+  z-index: 10; /* Z-index más alto cuando está en hover */
+}
+
+.bar-segment {
+  width: 100%;
+  transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  pointer-events: none; /* Los segmentos no bloquean el hover del contenedor */
+}
+
+.bar-segment.completed {
+  background: var(--color-primary); /* Color teal/cyan */
+  /* Gradiente sutil */
+  background: linear-gradient(to top, var(--color-primary), #2dd4bf); 
+}
+
+.bar-segment.in-progress {
+  background: var(--color-info); /* Color azul */
+  opacity: 0.8;
+}
+
+.chart-label {
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  pointer-events: none; /* No interferir con el hover */
+}
+
+/* Tooltip personalizado */
+.chart-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px); /* Posicionar arriba de la columna */
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-dark-lighter);
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  pointer-events: none; /* No bloquear eventos del mouse */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+  z-index: 2000; /* Z-index muy alto para estar sobre todos los gráficos */
+  min-width: 160px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.chart-column-group:hover .chart-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.tooltip-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.tooltip-row:last-child {
+  margin-bottom: 0;
+}
+
+.tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+  display: inline-block;
+}
+
+.tooltip-dot.completed { background-color: var(--color-primary); }
+.tooltip-dot.in-progress { background-color: var(--color-info); }
+
+.tooltip-value {
+  font-weight: 600;
+  color: var(--color-white);
+}
+

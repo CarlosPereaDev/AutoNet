@@ -1,0 +1,449 @@
+/* Animaciones modernas para el fondo */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  33% {
+    transform: translate(50px, -50px) scale(1.2);
+    opacity: 0.4;
+  }
+  66% {
+    transform: translate(-40px, 40px) scale(0.9);
+    opacity: 0.35;
+  }
+}
+
+@keyframes floatReverse {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.25;
+  }
+  33% {
+    transform: translate(-50px, 50px) scale(1.15);
+    opacity: 0.35;
+  }
+  66% {
+    transform: translate(40px, -40px) scale(0.95);
+    opacity: 0.3;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.15;
+    filter: blur(60px);
+  }
+  50% {
+    opacity: 0.25;
+    filter: blur(80px);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Contenedor principal con fondo animado moderno */
+.login-container {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-darker) 0%,
+    var(--color-primary-dark) 25%,
+    var(--color-dark-darker) 50%,
+    var(--color-primary-dark) 75%,
+    var(--color-primary-darker) 100%
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 20s ease infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Capa de luz animada superior derecha */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -15%;
+  width: 900px;
+  height: 900px;
+  background: radial-gradient(
+    circle,
+    rgba(249, 115, 22, 0.15) 0%,
+    rgba(249, 115, 22, 0.08) 30%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: float 18s ease-in-out infinite, glow 8s ease-in-out infinite;
+  z-index: 0;
+  will-change: transform, opacity;
+}
+
+/* Capa de luz animada inferior izquierda */
+.login-container::after {
+  content: '';
+  position: absolute;
+  bottom: -35%;
+  left: -10%;
+  width: 850px;
+  height: 850px;
+  background: radial-gradient(
+    circle,
+    rgba(20, 184, 166, 0.18) 0%,
+    rgba(20, 184, 166, 0.1) 30%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: floatReverse 22s ease-in-out infinite, glow 10s ease-in-out infinite 2s;
+  z-index: 0;
+  will-change: transform, opacity;
+}
+
+/* Tarjeta de login */
+.login-card {
+  background: var(--color-white);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 95vh;
+  overflow-y: auto;
+  box-shadow: 
+    0 20px 60px var(--shadow-color-darker),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  animation: slideUp 0.5s ease-out;
+}
+
+/* Tarjeta de registro - más ancha */
+.login-card.register-mode {
+  max-width: 750px;
+  max-height: 95vh;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+/* Ajustes para formulario de registro en grid */
+.login-card.register-mode form {
+  gap: 16px;
+}
+
+.login-card.register-mode .grid {
+  gap: 16px;
+}
+
+/* Mejor separación entre grupos de campos en registro */
+.login-card.register-mode .flex.flex-col {
+  gap: 8px;
+}
+
+/* Toggle Switch - Estilo Interruptor */
+.toggle-switch-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.toggle-switch {
+  position: relative;
+  display: flex;
+  background: var(--color-gray-lighter);
+  border-radius: 12px;
+  padding: 4px;
+  width: 100%;
+  max-width: 300px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-option {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.toggle-option:hover {
+  color: var(--text-primary);
+}
+
+.toggle-option.active {
+  color: var(--color-primary);
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: var(--color-white);
+  border-radius: 8px;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.toggle-slider.left {
+  transform: translateX(0);
+}
+
+.toggle-slider.right {
+  transform: translateX(100%);
+}
+
+/* Inputs */
+.form-input {
+  width: 100%;
+  padding: 9px 12px 9px 40px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--color-white);
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-rgba-10);
+}
+
+.form-input::placeholder {
+  color: var(--text-light);
+}
+
+.form-input.password-input {
+  padding-right: 42px;
+}
+
+/* Estilos para select */
+select.form-input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23334155' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+select.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Iconos de input */
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  z-index: 10;
+  transition: color 0.3s ease;
+  pointer-events: none;
+}
+
+.input-wrapper:focus-within .input-icon,
+.password-input-wrapper:focus-within .input-icon {
+  color: var(--color-primary);
+}
+
+/* Password toggle */
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.password-toggle:hover {
+  color: var(--color-primary);
+}
+
+/* Botón de login */
+.login-button {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  color: var(--color-white);
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px var(--color-primary-rgba-30);
+  margin-top: 2px;
+}
+
+.login-button:hover {
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+  box-shadow: 0 6px 20px var(--color-primary-rgba-40);
+  transform: translateY(-2px);
+}
+
+.login-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px var(--color-primary-rgba-30);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Botón de Google */
+.google-login-button {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--color-white);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.google-login-button:hover {
+  background: var(--color-gray-lightest);
+  border-color: var(--color-gray-dark);
+  box-shadow: 0 4px 12px var(--shadow-color-dark);
+  transform: translateY(-2px);
+}
+
+.google-login-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.google-login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.google-login-button:disabled:hover {
+  background: var(--color-white);
+  border-color: var(--border-color);
+  box-shadow: 0 2px 4px var(--shadow-color);
+  transform: none;
+}
+
+.google-icon {
+  flex-shrink: 0;
+  display: block;
+  font-size: 16px;
+  color: var(--color-primary);
+}
+
+/* Mensaje de error */
+.error-message {
+  background: var(--color-error-rgba-10);
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+/* Checkbox personalizado */
+.checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--color-white);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox-custom:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-rgba-10);
+}
+
+.checkbox-custom.checked {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  border-color: var(--color-primary);
+}
+
+.checkbox-custom.checked::after {
+  content: '✓';
+  color: var(--color-white);
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* Radio buttons personalizados para roles */
+input[type="radio"]:checked + div {
+  border-color: var(--color-primary);
+  background: var(--color-primary-rgba-10);
+}
+
+/* Estilos para radio buttons con peer (Tailwind) */
+input[type="radio"].peer:checked ~ div,
+input[type="radio"]:checked + div {
+  border-color: var(--color-primary);
+  background: var(--color-primary-rgba-10);
+}
+
