@@ -22,15 +22,17 @@ class UserController extends Controller
 
             $workers = User::where('organization_id', $organizationId)
                 ->where('role', 'trabajador')
-                ->withCount(['tasks as active_tasks_count' => function ($query) {
-                    $query->whereIn('status', ['pending', 'in_progress']);
-                }])
+                ->withCount([
+                    'tasks as active_tasks_count' => function ($query) {
+                        $query->whereIn('status', ['pending', 'in_progress']);
+                    }
+                ])
                 ->orderBy('name')
                 ->get()
                 ->map(function ($worker) {
                     // Calcular si está activo (última actividad en los últimos 5 minutos)
-                    $isActive = $worker->last_activity_at && 
-                               $worker->last_activity_at->diffInMinutes(now()) <= 5;
+                    $isActive = $worker->last_activity_at &&
+                        $worker->last_activity_at->diffInMinutes(now()) <= 5;
                     $worker->is_active = $isActive;
                     return $worker;
                 });
@@ -132,6 +134,47 @@ class UserController extends Controller
     }
 
     /**
+     * Obtener ubicaciones de trabajadores de la organización (solo jefe)
+     */
+    public function getWorkersLocation(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            // Verificar que el usuario sea jefe
+            if ($user->role !== 'jefe') {
+                return response()->json([
+                    'message' => 'No tienes permisos para acceder a esta información'
+                ], 403);
+            }
+
+            $organizationId = $user->organization_id;
+
+            if (!$organizationId) {
+                return response()->json([
+                    'message' => 'No tienes una organización asignada'
+                ], 400);
+            }
+
+            // Obtener todos los trabajadores de la organización con sus ubicaciones (incluyendo los que no tienen ubicación)
+            $workers = User::where('organization_id', $organizationId)
+                ->where('role', 'trabajador')
+                ->select('id', 'name', 'email', 'latitude', 'longitude', 'last_location_at', 'last_activity_at')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'workers' => $workers
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener ubicaciones de trabajadores: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al obtener las ubicaciones: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Eliminar un trabajador
      */
     public function destroy(Request $request, $id)
@@ -173,7 +216,7 @@ class UserController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             if (!$this->isAdmin($user)) {
                 return response()->json(['message' => 'No autorizado'], 403);
             }
@@ -198,7 +241,7 @@ class UserController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             if (!$this->isAdmin($user)) {
                 return response()->json(['message' => 'No autorizado'], 403);
             }
@@ -254,7 +297,7 @@ class UserController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             if (!$this->isAdmin($user)) {
                 return response()->json(['message' => 'No autorizado'], 403);
             }
@@ -316,7 +359,7 @@ class UserController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             if (!$this->isAdmin($user)) {
                 return response()->json(['message' => 'No autorizado'], 403);
             }
@@ -337,6 +380,33 @@ class UserController extends Controller
             \Log::error('Error al eliminar usuario: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Error al eliminar el usuario: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * Actualizar ubicación del usuario autenticado
+     */
+    public function updateLocation(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            $validated = $request->validate([
+                'latitude' => 'required|numeric|between:-90,90',
+                'longitude' => 'required|numeric|between:-180,180',
+            ]);
+
+            $user->update([
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'last_location_at' => now(),
+            ]);
+
+            return response()->json(['message' => 'Ubicación actualizada']);
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar ubicación: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al actualizar ubicación'
             ], 500);
         }
     }

@@ -54,4 +54,19 @@ class Notification extends Model
             ]);
         }
     }
+
+    /**
+     * Crear una notificación para un trabajador
+     */
+    public static function createForWorker($workerId, $type, $title, $message, $data = [])
+    {
+        self::create([
+            'user_id' => $workerId,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'data' => $data,
+            'read' => false,
+        ]);
+    }
 }

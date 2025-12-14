@@ -1,18 +1,22 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom';
-import Login from './components/Login';
-import CompleteGoogleRegistration from './components/CompleteGoogleRegistration';
-import DashboardJefe from './components/DashboardJefe';
-import DashboardTrabajador from './components/DashboardTrabajador';
-import TareasJefe from './components/TareasJefe';
-import VehiculosJefe from './components/VehiculosJefe';
-import MaquinariaJefe from './components/MaquinariaJefe';
-import TrabajadoresJefe from './components/TrabajadoresJefe';
-import Notificaciones from './components/Notificaciones';
-import TareasTrabajador from './components/TareasTrabajador';
-import ActualizarDatos from './components/ActualizarDatos';
-import SuperUsuario from './components/SuperUsuario';
-import ProtectedRoute from './components/ProtectedRoute';
+import Login from './components/forms/Login';
+import CompleteGoogleRegistration from './components/forms/CompleteGoogleRegistration';
+import DashboardJefe from './components/dashboard/DashboardJefe';
+import DashboardTrabajador from './components/dashboard/DashboardTrabajador';
+import TareasJefe from './components/tasks/TareasJefe';
+import VehiculosJefe from './components/management/VehiculosJefe';
+import MaquinariaJefe from './components/management/MaquinariaJefe';
+import TrabajadoresJefe from './components/management/TrabajadoresJefe';
+import Notificaciones from './components/notifications/Notificaciones';
+import TareasTrabajador from './components/tasks/TareasTrabajador';
+import ActualizarDatos from './components/management/ActualizarDatos';
+import SuperUsuario from './components/admin/SuperUsuario';
+import UbicacionTrabajadores from './components/dashboard/UbicacionTrabajadores';
+import JefeLayout from './components/layouts/JefeLayout';
+import TrabajadorLayout from './components/layouts/TrabajadorLayout';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import { ToastProvider } from './components/common/Toast';
 import { isAuthenticated, getCurrentUser } from './services/authService';
 
 function LoginWrapper() {
@@ -24,7 +28,7 @@ function LoginWrapper() {
     if (token) {
       // Guardar el token del callback de Google
       localStorage.setItem('token', token);
-      
+
       // Obtener información del usuario desde el backend
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
       fetch(`${apiUrl}/user`, {
@@ -74,115 +78,59 @@ function LoginWrapper() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route 
-          path="/" 
-          element={<LoginWrapper />}
-        />
-        <Route
-          path="/complete-google-registration"
-          element={<CompleteGoogleRegistration />}
-        />
-        <Route
-          path="/dashboard/jefe"
-          element={
-            <ProtectedRoute requiredRole="jefe">
-              <DashboardJefe />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/jefe/tareas"
-          element={
-            <ProtectedRoute requiredRole="jefe">
-              <TareasJefe />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/jefe/vehiculos"
-          element={
-            <ProtectedRoute requiredRole="jefe">
-              <VehiculosJefe />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/jefe/maquinaria"
-          element={
-            <ProtectedRoute requiredRole="jefe">
-              <MaquinariaJefe />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/jefe/trabajadores"
-          element={
-            <ProtectedRoute requiredRole="jefe">
-              <TrabajadoresJefe />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/jefe/notificaciones"
-          element={
-            <ProtectedRoute requiredRole="jefe">
-              <Notificaciones role="jefe" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/trabajador"
-          element={
-            <ProtectedRoute requiredRole="trabajador">
-              <DashboardTrabajador />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/trabajador/tareas"
-          element={
-            <ProtectedRoute requiredRole="trabajador">
-              <TareasTrabajador />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/trabajador/actualizar-vehiculos"
-          element={
-            <ProtectedRoute requiredRole="trabajador">
-              <ActualizarDatos type="vehiculos" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/trabajador/actualizar-maquinaria"
-          element={
-            <ProtectedRoute requiredRole="trabajador">
-              <ActualizarDatos type="maquinaria" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/trabajador/notificaciones"
-          element={
-            <ProtectedRoute requiredRole="trabajador">
-              <Notificaciones role="trabajador" />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/organizations"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <SuperUsuario />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={<LoginWrapper />}
+          />
+          <Route
+            path="/complete-google-registration"
+            element={<CompleteGoogleRegistration />}
+          />
+          <Route
+            path="/dashboard/jefe"
+            element={
+              <ProtectedRoute requiredRole="jefe">
+                <JefeLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<DashboardJefe />} />
+            <Route path="tareas" element={<TareasJefe />} />
+            <Route path="vehiculos" element={<VehiculosJefe />} />
+            <Route path="maquinaria" element={<MaquinariaJefe />} />
+            <Route path="trabajadores" element={<TrabajadoresJefe />} />
+            <Route path="notificaciones" element={<Notificaciones role="jefe" />} />
+            <Route path="ubicacion-trabajadores" element={<UbicacionTrabajadores />} />
+          </Route>
+          <Route
+            path="/dashboard/trabajador"
+            element={
+              <ProtectedRoute requiredRole="trabajador">
+                <TrabajadorLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<DashboardTrabajador />} />
+            <Route path="tareas" element={<TareasTrabajador />} />
+            <Route path="actualizar-vehiculos" element={<ActualizarDatos type="vehiculos" />} />
+            <Route path="actualizar-maquinaria" element={<ActualizarDatos type="maquinaria" />} />
+            <Route path="notificaciones" element={<Notificaciones role="trabajador" />} />
+          </Route>
+          <Route
+            path="/admin/organizations"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <SuperUsuario />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 

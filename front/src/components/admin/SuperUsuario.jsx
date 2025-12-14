@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
+import {
   faRightFromBracket,
   faBuilding,
   faPlus,
@@ -18,22 +18,28 @@ import {
   faChevronUp,
   faExclamationTriangle,
   faCheckCircle,
-  faInfoCircle
+  faInfoCircle,
+  faKey,
+  faCopy,
+  faMapMarkerAlt
 } from '@fortawesome/free-solid-svg-icons';
-import { logout, getCurrentUser } from '../services/authService';
-import { getAllOrganizations, createOrganization, updateOrganization, deleteOrganization } from '../services/organizationService';
-import { getAllUsers, createUser, updateUser, deleteUser } from '../services/userAdminService';
-import { getOrganizations } from '../services/organizationService';
-import logo from '../assets/Logo.svg';
-import './Dashboard.css';
+import { logout, getCurrentUser } from '../../services/authService';
+import { getAllOrganizations, createOrganization, updateOrganization, deleteOrganization } from '../../services/organizationService';
+import { getAllUsers, createUser, updateUser, deleteUser } from '../../services/userAdminService';
+import { getOrganizations } from '../../services/organizationService';
+import { useToast } from '../common/Toast';
+import Select from '../common/Select';
+import logo from '../../assets/Logo.svg';
+import '../styles/Dashboard.css';
 
 function SuperUsuario() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getCurrentUser();
+  const toast = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('organizations'); // 'organizations' o 'users'
-  
+
   // Estados para organizaciones
   const [organizations, setOrganizations] = useState([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
@@ -41,7 +47,7 @@ function SuperUsuario() {
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [editingOrganization, setEditingOrganization] = useState(null);
   const [orgFormData, setOrgFormData] = useState({ name: '' });
-  
+
   // Estados para usuarios
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -58,7 +64,7 @@ function SuperUsuario() {
   });
   const [availableOrganizations, setAvailableOrganizations] = useState([]);
   const [expandedOrgs, setExpandedOrgs] = useState(new Set());
-  
+
   // Estados para modales de alerta y confirmación
   const [alertModal, setAlertModal] = useState({ show: false, message: '', type: 'error' });
   const [confirmModal, setConfirmModal] = useState({ show: false, message: '', onConfirm: null });
@@ -266,7 +272,7 @@ function SuperUsuario() {
 
   const handleSubmitUser = async (e) => {
     e.preventDefault();
-    
+
     if (!userFormData.name || userFormData.name.trim() === '') {
       showAlert('El nombre es obligatorio', 'error');
       return;
@@ -366,7 +372,7 @@ function SuperUsuario() {
     return faUsers;
   };
 
-  const filteredOrganizations = organizations.filter(org => 
+  const filteredOrganizations = organizations.filter(org =>
     org.name?.toLowerCase().includes(searchTermOrgs.toLowerCase())
   );
 
@@ -383,7 +389,7 @@ function SuperUsuario() {
   // Agrupar usuarios por organización
   const usersByOrganization = {};
   const usersWithoutOrg = [];
-  
+
   users.forEach(u => {
     if (u.organization_id && u.organization) {
       const orgId = u.organization_id;
@@ -401,7 +407,7 @@ function SuperUsuario() {
 
   // Filtrar usuarios según búsqueda
   const filterUsersBySearch = (userList) => {
-    return userList.filter(u => 
+    return userList.filter(u =>
       u.name?.toLowerCase().includes(searchTermUsers.toLowerCase()) ||
       u.email?.toLowerCase().includes(searchTermUsers.toLowerCase())
     );
@@ -412,7 +418,7 @@ function SuperUsuario() {
     .filter(orgId => {
       const orgData = usersByOrganization[orgId];
       const orgName = orgData.organization.name.toLowerCase();
-      const hasMatchingUsers = orgData.users.some(u => 
+      const hasMatchingUsers = orgData.users.some(u =>
         u.name?.toLowerCase().includes(searchTermUsers.toLowerCase()) ||
         u.email?.toLowerCase().includes(searchTermUsers.toLowerCase())
       );
@@ -436,7 +442,7 @@ function SuperUsuario() {
         </div>
 
         <nav className="sidebar-nav">
-          <div 
+          <div
             className={`nav-item ${activeTab === 'organizations' ? 'active' : ''}`}
             onClick={() => setActiveTab('organizations')}
             style={{ cursor: 'pointer' }}
@@ -444,7 +450,7 @@ function SuperUsuario() {
             <FontAwesomeIcon icon={faBuilding} />
             <span>Organizaciones</span>
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => setActiveTab('users')}
             style={{ cursor: 'pointer' }}
@@ -487,7 +493,6 @@ function SuperUsuario() {
                 </p>
               </div>
               <button className="btn-primary" onClick={() => handleOpenOrgModal()}>
-                <FontAwesomeIcon icon={faPlus} />
                 <span>Nueva Organización</span>
               </button>
             </section>
@@ -496,9 +501,9 @@ function SuperUsuario() {
               <div className="filters-search">
                 <div className="search-box">
                   <FontAwesomeIcon icon={faSearch} />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar organizaciones..." 
+                  <input
+                    type="text"
+                    placeholder="Buscar organizaciones..."
                     value={searchTermOrgs}
                     onChange={(e) => setSearchTermOrgs(e.target.value)}
                   />
@@ -516,9 +521,9 @@ function SuperUsuario() {
                   {searchTermOrgs ? 'No se encontraron organizaciones con ese criterio de búsqueda' : 'No hay organizaciones registradas'}
                 </div>
               ) : (
-                <div className="tasks-list">
+                <div className="tasks-view-grid">
                   {filteredOrganizations.map(org => (
-                    <div key={org.id} className="task-card">
+                    <div key={org.id} className="task-card task-card-active">
                       <div className="task-card-header">
                         <div className="task-status-badge">
                           <FontAwesomeIcon icon={faBuilding} className="status-icon-primary" />
@@ -527,6 +532,67 @@ function SuperUsuario() {
                       </div>
                       <div className="task-card-body">
                         <h3 className="task-card-title">{org.name}</h3>
+                        {org.code && (
+                          <div style={{
+                            marginTop: '12px',
+                            marginBottom: '12px',
+                            padding: '10px 14px',
+                            background: 'var(--color-dark-darkest)',
+                            borderRadius: '10px',
+                            border: '1px solid rgba(20, 184, 166, 0.2)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                              <FontAwesomeIcon icon={faKey} style={{ color: 'var(--color-primary)', fontSize: '14px' }} />
+                              <span style={{ fontSize: '12px', color: 'var(--color-gray)', fontWeight: '500' }}>
+                                Código:
+                              </span>
+                              <code style={{
+                                fontSize: '14px',
+                                fontWeight: '700',
+                                color: 'var(--color-primary)',
+                                letterSpacing: '1.5px',
+                                fontFamily: 'monospace'
+                              }}>
+                                {org.code}
+                              </code>
+                            </div>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(org.code);
+                                  toast.success('Código copiado al portapapeles');
+                                } catch (err) {
+                                  toast.error('Error al copiar el código');
+                                }
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--color-gray)',
+                                cursor: 'pointer',
+                                padding: '4px 6px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                transition: 'color 0.2s',
+                                borderRadius: '6px'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.color = 'var(--color-primary)';
+                                e.target.style.background = 'rgba(20, 184, 166, 0.1)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.color = 'var(--color-gray)';
+                                e.target.style.background = 'transparent';
+                              }}
+                              title="Copiar código"
+                            >
+                              <FontAwesomeIcon icon={faCopy} style={{ fontSize: '12px' }} />
+                            </button>
+                          </div>
+                        )}
                         <div className="task-card-meta">
                           <div className="task-meta-item">
                             <FontAwesomeIcon icon={faUsers} />
@@ -545,6 +611,7 @@ function SuperUsuario() {
                         </button>
                         <button className="action-btn action-delete" onClick={() => handleDeleteOrg(org.id)}>
                           <FontAwesomeIcon icon={faTrash} />
+                          <span>Eliminar</span>
                         </button>
                       </div>
                     </div>
@@ -563,7 +630,6 @@ function SuperUsuario() {
                 </p>
               </div>
               <button className="btn-primary" onClick={() => handleOpenUserModal()}>
-                <FontAwesomeIcon icon={faPlus} />
                 <span>Nuevo Usuario</span>
               </button>
             </section>
@@ -572,9 +638,9 @@ function SuperUsuario() {
               <div className="filters-search">
                 <div className="search-box">
                   <FontAwesomeIcon icon={faSearch} />
-                  <input 
-                    type="text" 
-                    placeholder="Buscar usuarios..." 
+                  <input
+                    type="text"
+                    placeholder="Buscar usuarios..."
                     value={searchTermUsers}
                     onChange={(e) => setSearchTermUsers(e.target.value)}
                   />
@@ -582,177 +648,159 @@ function SuperUsuario() {
               </div>
             </section>
 
-            <section className="dashboard-content-section">
+            <section className="dashboard-content-section" style={{ paddingBottom: '60px' }}>
               {loadingUsers ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-                  Cargando usuarios...
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+                  <div className="loading-spinner"></div>
+                  <p style={{ marginTop: '16px' }}>Cargando usuarios...</p>
                 </div>
               ) : filteredOrganizationsForUsers.length === 0 && filteredUsersWithoutOrg.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-                  {searchTermUsers ? 'No se encontraron usuarios con ese criterio de búsqueda' : 'No hay usuarios registrados'}
+                <div style={{ padding: '60px', textAlign: 'center', color: 'var(--color-text-secondary)', background: 'rgba(255,255,255,0.02)', borderRadius: '20px' }}>
+                  <FontAwesomeIcon icon={faUsers} style={{ fontSize: '48px', opacity: 0.2, marginBottom: '16px' }} />
+                  <p>{searchTermUsers ? 'No se encontraron usuarios con ese criterio de búsqueda' : 'No hay usuarios registrados'}</p>
                 </div>
               ) : (
-                <div className="tasks-list">
-                  {/* Mostrar organizaciones con sus usuarios */}
+                <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+                  {/* ORGANIZACIONES */}
                   {filteredOrganizationsForUsers.map(orgData => {
                     const isExpanded = expandedOrgs.has(orgData.id);
                     const orgUsers = filterUsersBySearch(orgData.users);
-                    
+
+                    if (orgUsers.length === 0 && searchTermUsers) return null;
+
                     return (
-                      <div key={orgData.id} className="task-card">
-                        <div className="task-card-header">
-                          <div className="task-status-badge">
-                            <FontAwesomeIcon icon={faBuilding} className="status-icon-primary" />
-                            <span className="status-text status-completed">{orgData.organization.name}</span>
-                          </div>
-                          {orgUsers.length > 0 && (
-                            <button
-                              onClick={() => toggleOrgExpansion(orgData.id)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--color-text-secondary)',
-                                cursor: 'pointer',
-                                padding: '4px 8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                fontSize: '14px',
-                                transition: 'color 0.2s'
-                              }}
-                              onMouseEnter={(e) => e.target.style.color = 'var(--color-primary-light)'}
-                              onMouseLeave={(e) => e.target.style.color = 'var(--color-text-secondary)'}
-                            >
-                              <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} />
-                              <span>{isExpanded ? 'Ocultar' : 'Ver'} usuarios ({orgUsers.length})</span>
-                            </button>
-                          )}
-                        </div>
-                        <div className="task-card-body">
-                          <div className="task-card-meta">
-                            <div className="task-meta-item">
-                              <FontAwesomeIcon icon={faUsers} />
-                              <span>{orgUsers.length} {orgUsers.length === 1 ? 'usuario' : 'usuarios'}</span>
+                      <div key={orgData.id} className="org-section">
+                        <div
+                          className="org-section-header"
+                          onClick={() => toggleOrgExpansion(orgData.id)}
+                          aria-expanded={isExpanded}
+                        >
+                          <div className="org-info">
+                            <div className="org-icon-box">
+                              <FontAwesomeIcon icon={faBuilding} />
                             </div>
-                          </div>
-                          
-                          {isExpanded && orgUsers.length > 0 && (
-                            <div className="user-expanded-section">
-                              <div className="user-list-container">
-                                {orgUsers.map(u => (
-                                  <div key={u.id} className="user-item-card">
-                                    <div className="user-item-info">
-                                      <div className="user-item-header">
-                                        <FontAwesomeIcon icon={getRoleIcon(u.role)} className="user-item-icon" />
-                                        <span className="user-item-name">{u.name}</span>
-                                        <span className={`user-role-badge ${u.role}`}>
-                                          {getRoleLabel(u.role)}
-                                        </span>
-                                      </div>
-                                      <div className="user-item-email">
-                                        <FontAwesomeIcon icon={faEnvelope} />
-                                        <span>{u.email}</span>
-                                      </div>
-                                    </div>
-                                    <div className="user-item-actions">
-                                      <button 
-                                        className="action-btn action-edit" 
-                                        onClick={() => handleOpenUserModal(u)}
-                                        style={{ padding: '8px 14px', fontSize: '13px' }}
-                                      >
-                                        <FontAwesomeIcon icon={faEdit} />
-                                        <span>Editar</span>
-                                      </button>
-                                      {u.id !== user?.id && (
-                                        <button 
-                                          className="action-btn action-delete" 
-                                          onClick={() => handleDeleteUser(u.id)}
-                                          style={{ padding: '8px 12px' }}
-                                        >
-                                          <FontAwesomeIcon icon={faTrash} />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <span className="org-title">{orgData.organization.name}</span>
+                                <span className="org-count-badge" style={{ marginLeft: '12px' }}>
+                                  {orgUsers.length} {orgUsers.length === 1 ? 'Usuario' : 'Usuarios'}
+                                </span>
                               </div>
                             </div>
-                          )}
-                          
-                          {isExpanded && orgUsers.length === 0 && (
-                            <div style={{ 
-                              marginTop: '20px', 
-                              paddingTop: '20px', 
-                              borderTop: '1px solid rgba(148, 163, 184, 0.08)',
-                              textAlign: 'center',
-                              color: 'var(--color-text-secondary)',
-                              fontSize: '14px'
-                            }}>
-                              No hay usuarios que coincidan con la búsqueda
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Mostrar usuarios sin organización (admins) */}
-                  {filteredUsersWithoutOrg.length > 0 && (
-                    <div className="task-card">
-                      <div className="task-card-header">
-                        <div className="task-status-badge">
-                          <FontAwesomeIcon icon={faShield} className="status-icon-primary" />
-                          <span className="status-text status-completed">Sin Organización</span>
-                        </div>
-                      </div>
-                      <div className="task-card-body">
-                        <div className="task-card-meta">
-                          <div className="task-meta-item">
-                            <FontAwesomeIcon icon={faUsers} />
-                            <span>{filteredUsersWithoutOrg.length} {filteredUsersWithoutOrg.length === 1 ? 'usuario' : 'usuarios'}</span>
+                          </div>
+                          <div className="org-toggle-icon">
+                            <FontAwesomeIcon icon={faChevronDown} />
                           </div>
                         </div>
-                        
-                        <div className="user-expanded-section">
-                          <div className="user-list-container">
-                            {filteredUsersWithoutOrg.map(u => (
-                              <div key={u.id} className="user-item-card">
-                                <div className="user-item-info">
-                                  <div className="user-item-header">
-                                    <FontAwesomeIcon icon={getRoleIcon(u.role)} className="user-item-icon" />
-                                    <span className="user-item-name">{u.name}</span>
-                                    <span className={`user-role-badge ${u.role}`}>
+
+                        {isExpanded && (
+                          <div className="premium-user-grid">
+                            {orgUsers.map(u => (
+                              <div key={u.id} className={`premium-user-card role-${u.role}`}>
+                                <div className="puc-header">
+                                  <div className="puc-avatar">
+                                    {u.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="puc-info">
+                                    <h3 className="puc-name" title={u.name}>{u.name}</h3>
+                                    <span className="puc-role">
                                       {getRoleLabel(u.role)}
                                     </span>
                                   </div>
-                                  <div className="user-item-email">
+                                </div>
+                                <div className="puc-details">
+                                  <div className="puc-email" title={u.email}>
                                     <FontAwesomeIcon icon={faEnvelope} />
                                     <span>{u.email}</span>
                                   </div>
                                 </div>
-                                <div className="user-item-actions">
-                                  <button 
-                                    className="action-btn action-edit" 
+                                <div className="puc-actions">
+                                  <button
+                                    className="puc-btn puc-btn-edit"
                                     onClick={() => handleOpenUserModal(u)}
-                                    style={{ padding: '8px 14px', fontSize: '13px' }}
                                   >
                                     <FontAwesomeIcon icon={faEdit} />
                                     <span>Editar</span>
                                   </button>
                                   {u.id !== user?.id && (
-                                    <button 
-                                      className="action-btn action-delete" 
+                                    <button
+                                      className="puc-btn puc-btn-delete"
                                       onClick={() => handleDeleteUser(u.id)}
-                                      style={{ padding: '8px 12px' }}
+                                      title="Eliminar usuario"
                                     >
                                       <FontAwesomeIcon icon={faTrash} />
+                                      <span>Eliminar</span>
                                     </button>
                                   )}
                                 </div>
                               </div>
                             ))}
                           </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* USUARIOS SIN ORGANIZACIÓN */}
+                  {filteredUsersWithoutOrg.length > 0 && (
+                    <div className="org-section">
+                      <div className="org-section-header" style={{ cursor: 'default' }}>
+                        <div className="org-info">
+                          <div className="org-icon-box" style={{ background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(185, 28, 28, 0.1) 100%)', color: 'var(--color-error)' }}>
+                            <FontAwesomeIcon icon={faShield} />
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                              <span className="org-title">Administradores sin Organización</span>
+                              <span className="org-count-badge" style={{ marginLeft: '12px' }}>
+                                {filteredUsersWithoutOrg.length} {filteredUsersWithoutOrg.length === 1 ? 'Usuario' : 'Usuarios'}
+                              </span>
+                            </div>
+                          </div>
                         </div>
+                      </div>
+
+                      <div className="premium-user-grid">
+                        {filteredUsersWithoutOrg.map(u => (
+                          <div key={u.id} className={`premium-user-card role-${u.role}`}>
+                            <div className="puc-header">
+                              <div className="puc-avatar">
+                                <FontAwesomeIcon icon={faShield} />
+                              </div>
+                              <div className="puc-info">
+                                <h3 className="puc-name" title={u.name}>{u.name}</h3>
+                                <span className="puc-role">
+                                  {getRoleLabel(u.role)}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="puc-details">
+                              <div className="puc-email" title={u.email}>
+                                <FontAwesomeIcon icon={faEnvelope} />
+                                <span>{u.email}</span>
+                              </div>
+                            </div>
+                            <div className="puc-actions">
+                              <button
+                                className="puc-btn puc-btn-edit"
+                                onClick={() => handleOpenUserModal(u)}
+                              >
+                                <FontAwesomeIcon icon={faEdit} />
+                                <span>Editar</span>
+                              </button>
+                              {u.id !== user?.id && (
+                                <button
+                                  className="puc-btn puc-btn-delete"
+                                  onClick={() => handleDeleteUser(u.id)}
+                                  title="Eliminar usuario"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} />
+                                  <span>Eliminar</span>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -781,7 +829,7 @@ function SuperUsuario() {
                 <input
                   type="text"
                   value={orgFormData.name}
-                  onChange={(e) => setOrgFormData({...orgFormData, name: e.target.value})}
+                  onChange={(e) => setOrgFormData({ ...orgFormData, name: e.target.value })}
                   required
                   placeholder="Nombre de la organización"
                 />
@@ -815,7 +863,7 @@ function SuperUsuario() {
                 <input
                   type="text"
                   value={userFormData.name}
-                  onChange={(e) => setUserFormData({...userFormData, name: e.target.value})}
+                  onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })}
                   required
                   placeholder="Nombre completo del usuario"
                 />
@@ -826,49 +874,48 @@ function SuperUsuario() {
                 <input
                   type="email"
                   value={userFormData.email}
-                  onChange={(e) => setUserFormData({...userFormData, email: e.target.value})}
+                  onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
                   required
                   placeholder="email@ejemplo.com"
                 />
               </div>
 
               <div className="form-row">
-                <div className="form-group">
-                  <label>Rol *</label>
-                  <select
-                    value={userFormData.role}
-                    onChange={(e) => {
-                      const newRole = e.target.value;
-                      setUserFormData({
-                        ...userFormData,
-                        role: newRole,
-                        organization_id: newRole === 'admin' ? '' : userFormData.organization_id
-                      });
-                    }}
-                    required
-                  >
-                    <option value="trabajador">Trabajador</option>
-                    <option value="jefe">Jefe</option>
-                    <option value="admin">Administrador</option>
-                  </select>
-                </div>
+                <Select
+                  label="Rol"
+                  name="role"
+                  value={userFormData.role}
+                  onChange={(e) => {
+                    const newRole = e.target.value;
+                    setUserFormData({
+                      ...userFormData,
+                      role: newRole,
+                      organization_id: newRole === 'admin' ? '' : userFormData.organization_id
+                    });
+                  }}
+                  options={[
+                    { value: 'trabajador', label: 'Trabajador' },
+                    { value: 'jefe', label: 'Jefe' },
+                    { value: 'admin', label: 'Administrador' }
+                  ]}
+                  required
+                />
 
                 {userFormData.role !== 'admin' && (
-                  <div className="form-group">
-                    <label>Organización *</label>
-                    <select
-                      value={userFormData.organization_id}
-                      onChange={(e) => setUserFormData({...userFormData, organization_id: e.target.value})}
-                      required={userFormData.role !== 'admin'}
-                    >
-                      <option value="">Seleccionar organización</option>
-                      {availableOrganizations.map(org => (
-                        <option key={org.id} value={org.id}>
-                          {org.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    label="Organización"
+                    name="organization_id"
+                    value={userFormData.organization_id}
+                    onChange={(e) => setUserFormData({ ...userFormData, organization_id: e.target.value })}
+                    options={[
+                      { value: '', label: 'Seleccionar organización' },
+                      ...availableOrganizations.map(org => ({
+                        value: org.id,
+                        label: org.name
+                      }))
+                    ]}
+                    required
+                  />
                 )}
               </div>
 
@@ -878,7 +925,7 @@ function SuperUsuario() {
                   <input
                     type="password"
                     value={userFormData.password}
-                    onChange={(e) => setUserFormData({...userFormData, password: e.target.value})}
+                    onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
                     required={!editingUser}
                     minLength={8}
                     placeholder={editingUser ? 'Dejar vacío para mantener la actual' : 'Mínimo 8 caracteres'}
@@ -891,7 +938,7 @@ function SuperUsuario() {
                     <input
                       type="password"
                       value={userFormData.password_confirmation}
-                      onChange={(e) => setUserFormData({...userFormData, password_confirmation: e.target.value})}
+                      onChange={(e) => setUserFormData({ ...userFormData, password_confirmation: e.target.value })}
                       required={!!userFormData.password}
                       placeholder="Repite la contraseña"
                     />
@@ -918,12 +965,12 @@ function SuperUsuario() {
           <div className="modal-content alert-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <FontAwesomeIcon 
-                  icon={alertModal.type === 'success' ? faCheckCircle : alertModal.type === 'info' ? faInfoCircle : faExclamationTriangle} 
-                  style={{ 
+                <FontAwesomeIcon
+                  icon={alertModal.type === 'success' ? faCheckCircle : alertModal.type === 'info' ? faInfoCircle : faExclamationTriangle}
+                  style={{
                     fontSize: '24px',
                     color: alertModal.type === 'success' ? 'var(--color-success)' : alertModal.type === 'info' ? 'var(--color-info)' : 'var(--color-error)'
-                  }} 
+                  }}
                 />
                 <h2 style={{ margin: 0 }}>
                   {alertModal.type === 'success' ? 'Éxito' : alertModal.type === 'info' ? 'Información' : 'Error'}
@@ -934,8 +981,8 @@ function SuperUsuario() {
               </button>
             </div>
             <div style={{ padding: '24px' }}>
-              <p style={{ 
-                margin: 0, 
+              <p style={{
+                margin: 0,
                 color: 'var(--color-text-primary)',
                 fontSize: '15px',
                 lineHeight: '1.6',
@@ -959,12 +1006,12 @@ function SuperUsuario() {
           <div className="modal-content alert-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <FontAwesomeIcon 
-                  icon={faExclamationTriangle} 
-                  style={{ 
+                <FontAwesomeIcon
+                  icon={faExclamationTriangle}
+                  style={{
                     fontSize: '24px',
                     color: 'var(--color-warning)'
-                  }} 
+                  }}
                 />
                 <h2 style={{ margin: 0 }}>Confirmar acción</h2>
               </div>
@@ -973,8 +1020,8 @@ function SuperUsuario() {
               </button>
             </div>
             <div style={{ padding: '24px' }}>
-              <p style={{ 
-                margin: 0, 
+              <p style={{
+                margin: 0,
                 color: 'var(--color-text-primary)',
                 fontSize: '15px',
                 lineHeight: '1.6'

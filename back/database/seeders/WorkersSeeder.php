@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class WorkersSeeder extends Seeder
 {
@@ -20,74 +21,87 @@ class WorkersSeeder extends Seeder
             ['name' => 'empresa']
         );
 
-        // Si existe "Raulico SL" o "Raulino SL", migrar trabajadores y eliminar la organización antigua
-        $oldOrganizations = Organization::whereIn('name', ['Raulico SL', 'Raulino SL'])->get();
-        foreach ($oldOrganizations as $oldOrganization) {
-            if ($oldOrganization->id !== $organization->id) {
-                // Migrar trabajadores a la nueva organización
-                User::where('organization_id', $oldOrganization->id)
-                    ->update(['organization_id' => $organization->id]);
-                // Eliminar la organización antigua
-                $oldOrganization->delete();
-                $this->command->info("✓ Migrados trabajadores de '{$oldOrganization->name}' a 'empresa'");
-            }
-        }
+        // Limpiar trabajadores existentes de esta organización para evitar duplicados y "limpiar"
+        User::where('organization_id', $organization->id)
+            ->where('role', 'trabajador')
+            ->delete();
+
+        $this->command->info("✓ Limpieza completada: Trabajadores antiguos eliminados.");
 
         // Lista de trabajadores de ejemplo
         $workers = [
-            ['name' => 'Juan Pérez García', 'email' => 'juan.perez@raulico.es'],
-            ['name' => 'María González López', 'email' => 'maria.gonzalez@raulico.es'],
-            ['name' => 'Carlos Martínez Ruiz', 'email' => 'carlos.martinez@raulico.es'],
-            ['name' => 'Ana Fernández Sánchez', 'email' => 'ana.fernandez@raulico.es'],
-            ['name' => 'Luis Rodríguez Torres', 'email' => 'luis.rodriguez@raulico.es'],
-            ['name' => 'Laura Jiménez Moreno', 'email' => 'laura.jimenez@raulico.es'],
-            ['name' => 'Pedro Sánchez Martín', 'email' => 'pedro.sanchez@raulico.es'],
-            ['name' => 'Carmen García Hernández', 'email' => 'carmen.garcia@raulico.es'],
-            ['name' => 'Miguel López Díaz', 'email' => 'miguel.lopez@raulico.es'],
-            ['name' => 'Isabel Muñoz Álvarez', 'email' => 'isabel.munoz@raulico.es'],
-            ['name' => 'Francisco Romero Gutiérrez', 'email' => 'francisco.romero@raulico.es'],
-            ['name' => 'Elena Navarro Serrano', 'email' => 'elena.navarro@raulico.es'],
-            ['name' => 'Antonio Morales Ramos', 'email' => 'antonio.morales@raulico.es'],
-            ['name' => 'Sofía Castro Iglesias', 'email' => 'sofia.castro@raulico.es'],
-            ['name' => 'David Ortega Medina', 'email' => 'david.ortega@raulico.es'],
-            ['name' => 'Patricia Delgado Vega', 'email' => 'patricia.delgado@raulico.es'],
-            ['name' => 'Javier Campos Fuentes', 'email' => 'javier.campos@raulico.es'],
-            ['name' => 'Mónica Vázquez Peña', 'email' => 'monica.vazquez@raulico.es'],
-            ['name' => 'Roberto Herrera Cruz', 'email' => 'roberto.herrera@raulico.es'],
-            ['name' => 'Natalia Flores Mendoza', 'email' => 'natalia.flores@raulico.es'],
-            ['name' => 'Alejandro Soto Ríos', 'email' => 'alejandro.soto@raulico.es'],
-            ['name' => 'Cristina Aguilar Paredes', 'email' => 'cristina.aguilar@raulico.es'],
-            ['name' => 'Daniel Méndez Valdez', 'email' => 'daniel.mendez@raulico.es'],
-            ['name' => 'Lucía Ramírez Ochoa', 'email' => 'lucia.ramirez@raulico.es'],
-            ['name' => 'Fernando Vargas Salinas', 'email' => 'fernando.vargas@raulico.es'],
-            ['name' => 'Adriana Rojas Campos', 'email' => 'adriana.rojas@raulico.es'],
-            ['name' => 'Ricardo Silva Pacheco', 'email' => 'ricardo.silva@raulico.es'],
-            ['name' => 'Beatriz Mendoza León', 'email' => 'beatriz.mendoza@raulico.es'],
-            ['name' => 'Óscar Vega Cárdenas', 'email' => 'oscar.vega@raulico.es'],
-            ['name' => 'Raquel Núñez Guzmán', 'email' => 'raquel.nunez@raulico.es'],
+            ['name' => 'Juan Pérez García', 'email' => 'juan.perez@empresa.com'],
+            ['name' => 'María González López', 'email' => 'maria.gonzalez@empresa.com'],
+            ['name' => 'Carlos Martínez Ruiz', 'email' => 'carlos.martinez@empresa.com'],
+            ['name' => 'Ana Fernández Sánchez', 'email' => 'ana.fernandez@empresa.com'],
+            ['name' => 'Luis Rodríguez Torres', 'email' => 'luis.rodriguez@empresa.com'],
+            ['name' => 'Laura Jiménez Moreno', 'email' => 'laura.jimenez@empresa.com'],
+            ['name' => 'Pedro Sánchez Martín', 'email' => 'pedro.sanchez@empresa.com'],
+            ['name' => 'Carmen García Hernández', 'email' => 'carmen.garcia@empresa.com'],
+            ['name' => 'Miguel López Díaz', 'email' => 'miguel.lopez@empresa.com'],
+            ['name' => 'Isabel Muñoz Álvarez', 'email' => 'isabel.munoz@empresa.com'],
+            ['name' => 'Francisco Romero Gutiérrez', 'email' => 'francisco.romero@empresa.com'],
+            ['name' => 'Elena Navarro Serrano', 'email' => 'elena.navarro@empresa.com'],
+            ['name' => 'Antonio Morales Ramos', 'email' => 'antonio.morales@empresa.com'],
+            ['name' => 'Sofía Castro Iglesias', 'email' => 'sofia.castro@empresa.com'],
+            ['name' => 'David Ortega Medina', 'email' => 'david.ortega@empresa.com'],
+            ['name' => 'Patricia Delgado Vega', 'email' => 'patricia.delgado@empresa.com'],
+            ['name' => 'Javier Campos Fuentes', 'email' => 'javier.campos@empresa.com'],
+            ['name' => 'Mónica Vázquez Peña', 'email' => 'monica.vazquez@empresa.com'],
+            ['name' => 'Roberto Herrera Cruz', 'email' => 'roberto.herrera@empresa.com'],
+            ['name' => 'Natalia Flores Mendoza', 'email' => 'natalia.flores@empresa.com'],
+            ['name' => 'Alejandro Soto Ríos', 'email' => 'alejandro.soto@empresa.com'],
+            ['name' => 'Cristina Aguilar Paredes', 'email' => 'cristina.aguilar@empresa.com'],
+            ['name' => 'Daniel Méndez Valdez', 'email' => 'daniel.mendez@empresa.com'],
+            ['name' => 'Lucía Ramírez Ochoa', 'email' => 'lucia.ramirez@empresa.com'],
+            ['name' => 'Fernando Vargas Salinas', 'email' => 'fernando.vargas@empresa.com'],
+            ['name' => 'Adriana Rojas Campos', 'email' => 'adriana.rojas@empresa.com'],
+            ['name' => 'Ricardo Silva Pacheco', 'email' => 'ricardo.silva@empresa.com'],
+            ['name' => 'Beatriz Mendoza León', 'email' => 'beatriz.mendoza@empresa.com'],
+            ['name' => 'Óscar Vega Cárdenas', 'email' => 'oscar.vega@empresa.com'],
+            ['name' => 'Raquel Núñez Guzmán', 'email' => 'raquel.nunez@empresa.com'],
         ];
 
-        $this->command->info("Creando trabajadores para la organización: {$organization->name}");
+        $this->command->info("Creando trabajadores con ubicaciones para la organización: {$organization->name}");
 
-        foreach ($workers as $workerData) {
-            // Verificar si el trabajador ya existe
-            $existingWorker = User::where('email', $workerData['email'])->first();
-            
-            if (!$existingWorker) {
-                User::create([
-                    'name' => $workerData['name'],
-                    'email' => $workerData['email'],
-                    'password' => Hash::make('password123'), // Contraseña por defecto
-                    'organization_id' => $organization->id,
-                    'role' => 'trabajador',
-                ]);
-                $this->command->info("✓ Creado: {$workerData['name']}");
-            } else {
-                $this->command->warn("⊘ Ya existe: {$workerData['name']}");
+        // Coordenadas base (ej. centro de una ciudad)
+        $baseLat = 38.3452;
+        $baseLng = -0.4815;
+
+        foreach ($workers as $index => $workerData) {
+            // Generar ubicación aleatoria para el 80% de los trabajadores
+            $hasLocation = rand(0, 100) < 80;
+            $lat = null;
+            $lng = null;
+            $lastLocationAt = null;
+
+            if ($hasLocation) {
+                // Generar desplazamiento aleatorio (aprox. 10km a la redonda)
+                $latOffset = (rand(-100, 100) / 1000); // +/- 0.1 grados
+                $lngOffset = (rand(-100, 100) / 1000);
+
+                $lat = $baseLat + $latOffset;
+                $lng = $baseLng + $lngOffset;
+
+                // Fecha reciente aleatoria (últimos 30 minutos)
+                $lastLocationAt = Carbon::now()->subMinutes(rand(0, 30));
             }
+
+            User::create([
+                'name' => $workerData['name'],
+                'email' => $workerData['email'],
+                'password' => Hash::make('password123'),
+                'organization_id' => $organization->id,
+                'role' => 'trabajador',
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'last_location_at' => $lastLocationAt,
+            ]);
+
+            $status = $hasLocation ? "con ubicación" : "sin ubicación";
+            $this->command->info("✓ Creado: {$workerData['name']} ({$status})");
         }
 
-        $this->command->info("\n✓ Seeder completado. Total de trabajadores en {$organization->name}: " . 
-            User::where('organization_id', $organization->id)->where('role', 'trabajador')->count());
+        $this->command->info("\n✓ Seeder completado. Total de trabajadores: " . count($workers));
     }
 }

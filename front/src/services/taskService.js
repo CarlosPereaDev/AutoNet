@@ -22,6 +22,14 @@ export const getMyTasks = async (useCache = true) => {
 };
 
 /**
+ * Obtener tareas disponibles (sin asignar)
+ */
+export const getAvailableTasks = async (useCache = true) => {
+  const key = '/tasks/available';
+  return await cachedRequest(key, () => api.get(key), CACHE_TTL.SHORT, useCache);
+};
+
+/**
  * Crear una nueva tarea
  */
 export const createTask = async (taskData) => {
@@ -40,6 +48,15 @@ export const updateTask = async (id, taskData) => {
 };
 
 /**
+ * Reservar una tarea (asignarla a un trabajador)
+ */
+export const reserveTask = async (id) => {
+  // Invalidar caché de tareas al reservar
+  invalidateCachePattern('/tasks');
+  return await api.post(`/tasks/${id}/reserve`);
+};
+
+/**
  * Eliminar una tarea
  */
 export const deleteTask = async (id) => {
@@ -51,8 +68,10 @@ export const deleteTask = async (id) => {
 export default {
   getTasks,
   getMyTasks,
+  getAvailableTasks,
   createTask,
   updateTask,
+  reserveTask,
   deleteTask,
 };
 

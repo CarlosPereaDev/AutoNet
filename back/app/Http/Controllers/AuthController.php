@@ -78,19 +78,20 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // Si es trabajador, buscar organización existente
+        // Si es trabajador, buscar organización existente por código
         // Si es jefe, crear nueva organización
         if ($request->role === 'trabajador') {
-            $organization = Organization::where('name', $request->organization_name)->first();
+            // Buscar por código único
+            $organization = Organization::where('code', $request->organization_name)->first();
             
             if (!$organization) {
                 return response()->json([
-                    'message' => 'La organización especificada no existe. Por favor, verifica el nombre.',
-                    'errors' => ['organization_name' => ['La organización no existe']],
+                    'message' => 'El código de organización no es válido. Por favor, verifica el código.',
+                    'errors' => ['organization_name' => ['El código de organización no existe']],
                 ], 422);
             }
         } else {
-            // Jefe crea nueva organización - validar que no exista
+            // Jefe crea nueva organización - validar que el nombre no exista
             $existingOrganization = Organization::where('name', $request->organization_name)->first();
             
             if ($existingOrganization) {
@@ -100,6 +101,7 @@ class AuthController extends Controller
                 ], 422);
             }
             
+            // Crear nueva organización (el código se genera automáticamente en el modelo)
             $organization = Organization::create([
                 'name' => $request->organization_name,
             ]);
@@ -189,12 +191,21 @@ class AuthController extends Controller
     {
         $user = $request->user();
         
-        // Actualizar last_activity_at
-        $user->update(['last_activity_at' => now()]);
+        $updateData = ['last_activity_at' => now()];
+        
+        // Si se proporciona ubicación, actualizarla
+        if ($request->has('latitude') && $request->has('longitude')) {
+            $updateData['latitude'] = $request->input('latitude');
+            $updateData['longitude'] = $request->input('longitude');
+            $updateData['last_location_at'] = now();
+        }
+        
+        $user->update($updateData);
 
         return response()->json([
             'message' => 'Heartbeat recibido',
             'last_activity_at' => $user->last_activity_at,
+            'last_location_at' => $user->last_location_at,
         ]);
     }
 
@@ -370,14 +381,31 @@ class AuthController extends Controller
                 'role' => 'required|in:jefe,trabajador',
             ]);
 
-            // Buscar organización existente (tanto para jefe como trabajador)
-            $organization = Organization::where('name', $validated['organization_name'])->first();
+            // Buscar organización existente por código (trabajador) o crear nueva (jefe)
+            if ($validated['role'] === 'trabajador') {
+                $organization = Organization::where('code', $validated['organization_name'])->first();
             
             if (!$organization) {
                 return response()->json([
-                    'message' => 'La organización especificada no existe. Por favor, verifica el nombre.',
-                    'errors' => ['organization_name' => ['La organización no existe']],
+                        'message' => 'El código de organización no es válido. Por favor, verifica el código.',
+                        'errors' => ['organization_name' => ['El código de organización no existe']],
+                    ], 422)->withHeaders($corsHeaders);
+                }
+            } else {
+                // Jefe crea nueva organización
+                $existingOrganization = Organization::where('name', $validated['organization_name'])->first();
+                
+                if ($existingOrganization) {
+                    return response()->json([
+                        'message' => 'Ya existe una organización con ese nombre. Por favor, elige otro nombre.',
+                        'errors' => ['organization_name' => ['El nombre de la organización ya está en uso']],
                 ], 422)->withHeaders($corsHeaders);
+                }
+                
+                // Crear nueva organización (el código se genera automáticamente en el modelo)
+                $organization = Organization::create([
+                    'name' => $validated['organization_name'],
+                ]);
             }
 
             try {

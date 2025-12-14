@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
-import { isAuthenticated, getCurrentUser } from '../services/authService';
+import { isAuthenticated, getCurrentUser } from '../../services/authService';
 
 function ProtectedRoute({ children, requiredRole = null }) {
   const [searchParams] = useSearchParams();

@@ -2,10 +2,12 @@
  * Configuración base de la API
  */
 
+import { deduplicatedRequest } from './requestManager';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 /**
- * Función helper para hacer peticiones HTTP
+ * Función helper para hacer peticiones HTTP con deduplicación
  */
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -32,29 +34,8 @@ async function request(endpoint, options = {}) {
   };
 
   try {
-    const response = await fetch(url, config);
-    
-    // Intentar parsear JSON, pero manejar errores si no es JSON
-    let data;
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      data = { message: text || 'Error en la petición' };
-    }
-
-    // Si la respuesta no es exitosa, crear un error con la respuesta completa
-    if (!response.ok) {
-      const error = new Error(data.message || 'Error en la petición');
-      error.response = {
-        status: response.status,
-        statusText: response.statusText,
-        data: data
-      };
-      throw error;
-    }
-
+    // Usar deduplicatedRequest para evitar llamadas duplicadas
+    const data = await deduplicatedRequest(url, config);
     return data;
   } catch (error) {
     // Si es un error de red, lanzar mensaje más claro
@@ -62,6 +43,10 @@ async function request(endpoint, options = {}) {
       const networkError = new Error('Error de conexión con el servidor. Por favor, verifica que el servidor esté ejecutándose.');
       networkError.isNetworkError = true;
       throw networkError;
+    }
+    // Si es un error de abort, no propagarlo como error crítico
+    if (error.message === 'Petición cancelada') {
+      throw error;
     }
     // Si ya tiene response, mantenerlo
     if (!error.response) {

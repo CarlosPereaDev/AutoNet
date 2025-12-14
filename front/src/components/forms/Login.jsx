@@ -7,14 +7,14 @@ import {
   faEyeSlash,
   faBuilding,
   faUser,
-  faUserTie
+  faUserTie,
+  faKey
 } from '@fortawesome/free-solid-svg-icons';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
-import logo from '../assets/Logo.svg';
-import { login, register, redirectToGoogle } from '../services/authService';
-import { getOrganizations } from '../services/organizationService';
+import logo from '../../assets/Logo.svg';
+import { login, register, redirectToGoogle } from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
-import './Login.css';
+import '../styles/Login.css';
 
 function Login({ error: initialError = null }) {
   const navigate = useNavigate();
@@ -37,9 +37,6 @@ function Login({ error: initialError = null }) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(initialError || '');
   const [rememberMe, setRememberMe] = useState(false);
-  const [organizations, setOrganizations] = useState([]);
-  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
-  const organizationsLoadedRef = useRef(false);
 
   // Si hay un error inicial, mostrarlo
   React.useEffect(() => {
@@ -47,33 +44,6 @@ function Login({ error: initialError = null }) {
       setError(initialError);
     }
   }, [initialError]);
-
-  // Cargar organizaciones al montar el componente (una sola vez)
-  React.useEffect(() => {
-    // Solo cargar si no se han cargado antes
-    if (!organizationsLoadedRef.current) {
-      organizationsLoadedRef.current = true;
-      loadOrganizations();
-    }
-  }, []); // Solo se ejecuta una vez al montar
-
-  const loadOrganizations = async () => {
-    // Si ya hay organizaciones cargadas, no hacer nada
-    if (organizations.length > 0) {
-      return;
-    }
-
-    setLoadingOrganizations(true);
-    try {
-      const data = await getOrganizations(true); // Usar caché
-      setOrganizations(data.organizations || []);
-    } catch (error) {
-      console.error('Error al cargar organizaciones:', error);
-      setOrganizations([]);
-    } finally {
-      setLoadingOrganizations(false);
-    }
-  };
 
   const handleChange = (e) => {
     setFormData({
@@ -308,46 +278,30 @@ function Login({ error: initialError = null }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-2">
                   <label htmlFor="organization_name" className="text-[13px] font-semibold text-[var(--color-dark)] ml-1">
-                    {registerData.role === 'trabajador' ? 'Empresa' : 'Nombre de la Empresa'}
+                    {registerData.role === 'trabajador' ? 'Código de la Empresa' : 'Nombre de la Empresa'}
                   </label>
+                  <div className="input-wrapper relative flex items-center">
                   {registerData.role === 'trabajador' ? (
-                    <div className="input-wrapper relative flex items-center">
+                      <FontAwesomeIcon icon={faKey} className="input-icon" />
+                    ) : (
                       <FontAwesomeIcon icon={faBuilding} className="input-icon" />
-                      <select
-                        id="organization_name"
-                        name="organization_name"
-                        className="form-input"
-                        value={registerData.organization_name}
-                        onChange={handleRegisterChange}
-                        required
-                        disabled={loadingOrganizations}
-                      >
-                        <option value="">Seleccionar empresa...</option>
-                        {organizations.map((org) => (
-                          <option key={org.id} value={org.name}>
-                            {org.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div className="input-wrapper relative flex items-center">
-                      <FontAwesomeIcon icon={faBuilding} className="input-icon" />
+                    )}
                       <input
                         type="text"
                         id="organization_name"
                         name="organization_name"
                         className="form-input"
-                        placeholder="Mi Empresa S.L."
+                      placeholder={registerData.role === 'trabajador' ? 'ABC12345' : 'Mi Empresa S.L.'}
                         value={registerData.organization_name}
                         onChange={handleRegisterChange}
                         required
+                      style={registerData.role === 'trabajador' ? { textTransform: 'uppercase' } : {}}
+                      maxLength={registerData.role === 'trabajador' ? 20 : 255}
                       />
                     </div>
-                  )}
                   {registerData.role === 'trabajador' && (
                     <p className="text-[11px] text-[var(--text-secondary)] mt-1">
-                      Selecciona la empresa a la que perteneces
+                      Ingresa el código único de tu empresa
                     </p>
                   )}
                 </div>

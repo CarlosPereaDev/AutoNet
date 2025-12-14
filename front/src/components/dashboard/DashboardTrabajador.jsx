@@ -1,32 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faRightFromBracket, 
+import {
   faTasks,
-  faCar,
-  faTractor,
   faChartLine,
   faBell,
-  faBars,
   faCheckCircle,
   faClock,
   faArrowUp,
   faArrowDown
 } from '@fortawesome/free-solid-svg-icons';
-import { logout, getCurrentUser, processTokenFromUrl } from '../services/authService';
-import { getTrabajadorStats } from '../services/dashboardService';
-import { useAnimatedNumber } from '../hooks/useAnimatedNumber';
-import logo from '../assets/Logo.svg';
-import './Dashboard.css';
+import { getCurrentUser, processTokenFromUrl } from '../../services/authService';
+import { getTrabajadorStats } from '../../services/dashboardService';
+import { useAnimatedNumber } from '../../hooks/useAnimatedNumber';
+import { usePolling } from '../../hooks/usePolling';
+import '../styles/Dashboard.css';
+import '../styles/ChartStyles.css';
 
 function DashboardTrabajador() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   const user = getCurrentUser();
   const token = searchParams.get('token');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState({
     myTasks: 0,
     pendingTasks: 0,
@@ -55,74 +50,45 @@ function DashboardTrabajador() {
   }, [token, navigate]);
 
   // Cargar estadísticas desde el backend
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-        console.log('Cargando estadísticas del trabajador...');
-        const data = await getTrabajadorStats();
-        console.log('Datos recibidos del backend:', data);
-        
-        // Asegurar que todos los campos estén presentes
-        setStats({
-          myTasks: data.myTasks || 0,
-          pendingTasks: data.pendingTasks || 0,
-          completedTasks: data.completedTasks || 0,
-          inProgressTasks: data.inProgressTasks || 0,
-          totalHoursWorked: data.totalHoursWorked || 0,
-          tasksThisMonth: data.tasksThisMonth || 0,
-          hoursTrend: data.hoursTrend || 0,
-          tasksTrend: data.tasksTrend || 0,
-          completionRate: data.completionRate || 0,
-          monthlyData: data.monthlyData || []
-        });
-      } catch (error) {
+  const fetchStats = async () => {
+    try {
+      const data = await getTrabajadorStats(false); // false para no usar caché y obtener datos actualizados
+
+      // Asegurar que todos los campos estén presentes
+      setStats({
+        myTasks: data.myTasks || 0,
+        pendingTasks: data.pendingTasks || 0,
+        completedTasks: data.completedTasks || 0,
+        inProgressTasks: data.inProgressTasks || 0,
+        totalHoursWorked: data.totalHoursWorked || 0,
+        tasksThisMonth: data.tasksThisMonth || 0,
+        hoursTrend: data.hoursTrend || 0,
+        tasksTrend: data.tasksTrend || 0,
+        completionRate: data.completionRate || 0,
+        monthlyData: data.monthlyData || []
+      });
+    } catch (error) {
+      if (error.message !== 'Petición cancelada') {
         console.error('Error al cargar estadísticas:', error);
-        console.error('Error response:', error.response);
-        // Mantener valores por defecto en caso de error
-        setStats({
-          myTasks: 0,
-          pendingTasks: 0,
-          completedTasks: 0,
-          inProgressTasks: 0,
-          totalHoursWorked: 0,
-          tasksThisMonth: 0,
-          hoursTrend: 0,
-          tasksTrend: 0,
-          completionRate: 0,
-          monthlyData: []
-        });
-      } finally {
+      }
+      // En caso de error, mantener los valores actuales (no resetear)
+    } finally {
+      if (loading) {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
+    setLoading(true);
     fetchStats();
   }, []);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
+  // Polling optimizado que evita llamadas duplicadas
+  usePolling(fetchStats, 5000);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  useEffect(() => {
-    if (sidebarOpen) {
-      const handleClickOutside = (e) => {
-        if (window.innerWidth < 768 && !e.target.closest('.dashboard-sidebar') && !e.target.closest('.sidebar-toggle')) {
-          setSidebarOpen(false);
-        }
-      };
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [sidebarOpen]);
-
-  const taskCompletionRate = stats.completionRate || (stats.myTasks > 0 
-    ? Math.round((stats.completedTasks / stats.myTasks) * 100) 
+  const taskCompletionRate = stats.completionRate || (stats.myTasks > 0
+    ? Math.round((stats.completedTasks / stats.myTasks) * 100)
     : 0);
 
   // Valores animados
@@ -139,126 +105,60 @@ function DashboardTrabajador() {
     if (!stats.monthlyData || stats.monthlyData.length === 0) {
       return {
         completed: [],
+        inProgress: [],
         hours: [],
         maxValue: 1,
         maxHours: 1,
-        months: []
+        labels: []
       };
     }
 
-    const maxCompleted = Math.max(...stats.monthlyData.map(d => d.completed || 0), 1);
+    const maxValue = Math.max(
+      ...stats.monthlyData.map(d => (d.completed || 0) + (d.in_progress || 0)),
+      1
+    );
     const maxHours = Math.max(...stats.monthlyData.map(d => d.hours || 0), 1);
-    
+
     return {
-      completed: stats.monthlyData.map(d => 
-        maxCompleted > 0 ? Math.round(((d.completed || 0) / maxCompleted) * 100) : 0
-      ),
+      completed: stats.monthlyData.map(d => d.completed || 0),
+      inProgress: stats.monthlyData.map(d => d.in_progress || 0),
       hours: stats.monthlyData.map(d => d.hours || 0),
       maxHours: maxHours,
-      months: stats.monthlyData.map(d => d.month || '')
+      labels: stats.monthlyData.map(d => d.label || d.month || '')
     };
   };
 
   const chartData = getChartData();
 
   return (
-    <div className="dashboard-dark">
-      {/* Sidebar */}
-      <aside className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <div className="sidebar-logo">
-            <img src={logo} alt="AutoNet" className="sidebar-logo-img" />
-            <span className="sidebar-logo-text">AutoNet</span>
-          </div>
+    <>
+      {/* Welcome Section */}
+      <section className="dashboard-welcome-section">
+        <div>
+          <h1 className="welcome-title">Bienvenido, {user?.name || 'Trabajador'}</h1>
+          <p className="welcome-subtitle">
+            Gestiona tus tareas asignadas y actualiza información de vehículos y maquinaria.
+          </p>
         </div>
-
-        <nav className="sidebar-nav">
-          <Link 
-            to="/dashboard/trabajador" 
-            className={`nav-item ${location.pathname === '/dashboard/trabajador' ? 'active' : ''}`}
-            onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
-          >
-            <FontAwesomeIcon icon={faChartLine} />
-            <span>Dashboard</span>
+        <div className="welcome-actions">
+          <Link to="/dashboard/trabajador/tareas" className="btn-secondary">
+            Ver mis tareas →
           </Link>
-          <Link 
-            to="/dashboard/trabajador/tareas" 
-            className={`nav-item ${location.pathname.startsWith('/dashboard/trabajador/tareas') ? 'active' : ''}`}
-            onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
-          >
-            <FontAwesomeIcon icon={faTasks} />
-            <span>Mis Tareas</span>
+          <Link to="/dashboard/trabajador/notificaciones" className="btn-primary">
+            Ver notificaciones
           </Link>
-          <Link 
-            to="/dashboard/trabajador/actualizar-vehiculos" 
-            className={`nav-item ${location.pathname.startsWith('/dashboard/trabajador/actualizar-vehiculos') ? 'active' : ''}`}
-            onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
-          >
-            <FontAwesomeIcon icon={faCar} />
-            <span>Actualizar Vehículos</span>
-          </Link>
-          <Link 
-            to="/dashboard/trabajador/actualizar-maquinaria" 
-            className={`nav-item ${location.pathname.startsWith('/dashboard/trabajador/actualizar-maquinaria') ? 'active' : ''}`}
-            onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
-          >
-            <FontAwesomeIcon icon={faTractor} />
-            <span>Actualizar Maquinaria</span>
-          </Link>
-          <Link 
-            to="/dashboard/trabajador/notificaciones" 
-            className={`nav-item ${location.pathname.startsWith('/dashboard/trabajador/notificaciones') ? 'active' : ''}`}
-            onClick={() => window.innerWidth < 768 && setSidebarOpen(false)}
-          >
-            <FontAwesomeIcon icon={faBell} />
-            <span>Notificaciones</span>
-          </Link>
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="sidebar-user">
-            <div className="user-avatar">
-              {user?.name?.charAt(0) || 'U'}
-            </div>
-            <div className="user-info">
-              <div className="user-name">{user?.name || 'Usuario'}</div>
-              <div className="user-role">Trabajador</div>
-            </div>
-            <button className="sidebar-logout-btn" onClick={handleLogout} title="Cerrar Sesión">
-              <FontAwesomeIcon icon={faRightFromBracket} />
-            </button>
-          </div>
         </div>
-      </aside>
+      </section>
 
-      {/* Main Content */}
-      <div className="dashboard-main-content">
-        {/* Top Header - Solo visible en móvil */}
-        <header className="dashboard-top-header">
-          <button className="sidebar-toggle" onClick={toggleSidebar}>
-            <FontAwesomeIcon icon={faBars} />
-          </button>
-        </header>
-
-        {/* Welcome Section */}
-        <section className="dashboard-welcome-section">
-          <div>
-            <h1 className="welcome-title">Bienvenido, {user?.name || 'Trabajador'}</h1>
-            <p className="welcome-subtitle">
-              Gestiona tus tareas asignadas y actualiza información de vehículos y maquinaria.
-            </p>
-          </div>
+      {/* Loading State */}
+      {loading && (
+        <section style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-gray)' }}>
+          <p style={{ fontSize: '16px' }}>Cargando estadísticas...</p>
         </section>
+      )}
 
-        {/* Loading State */}
-        {loading && (
-          <section style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-gray)' }}>
-            <p style={{ fontSize: '16px' }}>Cargando estadísticas...</p>
-          </section>
-        )}
-
-        {/* KPI Cards Grid */}
-        {!loading && (
+      {/* KPI Cards Grid */}
+      {!loading && (
         <section className="kpi-grid">
           {/* My Tasks */}
           <div className="kpi-card">
@@ -350,10 +250,10 @@ function DashboardTrabajador() {
             </div>
           </div>
         </section>
-        )}
+      )}
 
-        {/* Charts Grid */}
-        {!loading && (
+      {/* Charts Grid */}
+      {!loading && (
         <section className="charts-grid">
           {/* Task Progress - Large Chart */}
           <div className="chart-card large">
@@ -361,6 +261,12 @@ function DashboardTrabajador() {
               <div>
                 <div className="chart-title">Progreso de mis tareas</div>
                 <div className="chart-value">{animatedTaskCompletionRate}</div>
+                {stats.tasksTrend !== undefined && stats.tasksTrend !== 0 && (
+                  <div className={`chart-trend ${stats.tasksTrend >= 0 ? 'trend-up' : 'trend-down'}`}>
+                    <FontAwesomeIcon icon={stats.tasksTrend >= 0 ? faArrowUp : faArrowDown} />
+                    <span>{Math.abs(stats.tasksTrend)}%</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="chart-content">
@@ -370,20 +276,62 @@ function DashboardTrabajador() {
                   <p style={{ margin: '8px 0 0 0', fontSize: '12px', opacity: 0.7 }}>Las estadísticas aparecerán cuando te asignen tareas</p>
                 </div>
               ) : (
-                <div className="chart-placeholder">
-                  <div className="chart-bars">
-                    {chartData.completed.length > 0 ? (
-                      chartData.completed.map((height, i) => (
-                        <div 
-                          key={i} 
-                          className="chart-bar" 
-                          style={{ height: `${Math.max(height, 5)}%` }}
-                          title={`${stats.monthlyData?.[i]?.month || ''}: ${stats.monthlyData?.[i]?.completed || 0} completadas`}
-                        ></div>
-                      ))
+                <div className="chart-container">
+                  <div className="chart-bars-area">
+                    {stats.monthlyData && stats.monthlyData.length > 0 ? (
+                      stats.monthlyData.map((data, i) => {
+                        // Calcular totales y proporciones
+                        const total = (data.completed || 0) + (data.in_progress || 0);
+                        const maxTotal = Math.max(...stats.monthlyData.map(d => (d.completed || 0) + (d.in_progress || 0)), 1);
+
+                        // Altura de la barra
+                        const heightPercent = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+
+                        // Proporción de los segmentos
+                        const completedRatio = total > 0 ? (data.completed / total) * 100 : 0;
+                        const inProgressRatio = total > 0 ? (data.in_progress / total) * 100 : 0;
+
+                        return (
+                          <div key={i} className="chart-column-group group">
+                            <div className="chart-bar-stack" style={{ height: `${Math.max(heightPercent, total > 0 ? 4 : 2)}%` }}>
+                              {/* Segmento en progreso (arriba en column-reverse) */}
+                              <div
+                                className="bar-segment in-progress"
+                                style={{ height: `${inProgressRatio}%` }}
+                              ></div>
+                              {/* Segmento completado (abajo en column-reverse) */}
+                              <div
+                                className="bar-segment completed"
+                                style={{ height: `${completedRatio}%` }}
+                              ></div>
+                            </div>
+                            <div className="chart-label">{data.label || data.month || ''}</div>
+
+                            {/* Tooltip */}
+                            <div className="chart-tooltip">
+                              <div className="tooltip-header">{data.label || data.month || ''}</div>
+                              <div className="tooltip-row">
+                                <div><span className="tooltip-dot completed"></span>Completadas</div>
+                                <span className="tooltip-value">{data.completed || 0}</span>
+                              </div>
+                              <div className="tooltip-row">
+                                <div><span className="tooltip-dot in-progress"></span>En progreso</div>
+                                <span className="tooltip-value">{data.in_progress || 0}</span>
+                              </div>
+                              <div className="tooltip-row" style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px dashed var(--border-color)' }}>
+                                <div style={{ color: 'var(--text-primary)' }}>Total</div>
+                                <span className="tooltip-value">{total}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
                     ) : (
                       Array.from({ length: 6 }, (_, i) => (
-                        <div key={i} className="chart-bar" style={{ height: '5%', opacity: 0.3 }}></div>
+                        <div key={i} className="chart-column-group">
+                          <div className="chart-bar-stack" style={{ height: '2%', opacity: 0.3 }}></div>
+                          <div className="chart-label">-</div>
+                        </div>
                       ))
                     )}
                   </div>
@@ -426,14 +374,18 @@ function DashboardTrabajador() {
                   <div className="mini-chart">
                     <div className="mini-chart-bars">
                       {chartData.completed.length > 0 ? (
-                        chartData.completed.map((height, i) => (
-                          <div 
-                            key={i} 
-                            className="mini-bar" 
-                            style={{ height: `${Math.max(height, 5)}%` }}
-                            title={`${stats.monthlyData?.[i]?.completed || 0} tareas - ${chartData.months[i]}`}
-                          ></div>
-                        ))
+                        chartData.completed.map((count, i) => {
+                          const maxCompleted = Math.max(...chartData.completed, 1);
+                          const heightPercent = maxCompleted > 0 ? Math.max((count / maxCompleted) * 100, 5) : 5;
+                          return (
+                            <div
+                              key={i}
+                              className="mini-bar"
+                              style={{ height: `${heightPercent}%` }}
+                              title={`${count} tareas - ${chartData.labels[i] || ''}`}
+                            ></div>
+                          );
+                        })
                       ) : (
                         Array.from({ length: 6 }, (_, i) => (
                           <div key={i} className="mini-bar" style={{ height: '5%', opacity: 0.3 }}></div>
@@ -442,7 +394,7 @@ function DashboardTrabajador() {
                     </div>
                   </div>
                   <div className="chart-footer-text">
-                    Últimos 6 meses <a href="#">Ver historial</a>
+                    Últimos 6 meses
                   </div>
                 </>
               )}
@@ -508,12 +460,8 @@ function DashboardTrabajador() {
             </div>
           </div>
         </section>
-        )}
-      </div>
-
-      {/* Overlay para móvil */}
-      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>}
-    </div>
+      )}
+    </>
   );
 }
 

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuilding, faUser, faUserTie } from '@fortawesome/free-solid-svg-icons';
-import { getGoogleRegistrationData, completeGoogleRegistration } from '../services/authService';
-import { getOrganizations } from '../services/organizationService';
-import logo from '../assets/Logo.svg';
-import './Login.css';
+import { faBuilding, faUser, faUserTie, faKey } from '@fortawesome/free-solid-svg-icons';
+import { getGoogleRegistrationData, completeGoogleRegistration } from '../../services/authService';
+import logo from '../../assets/Logo.svg';
+import '../styles/Login.css';
 
 function CompleteGoogleRegistration() {
   const navigate = useNavigate();
@@ -18,9 +17,6 @@ function CompleteGoogleRegistration() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [organizations, setOrganizations] = useState([]);
-  const [loadingOrganizations, setLoadingOrganizations] = useState(false);
-  const organizationsLoadedRef = useRef(false);
 
   useEffect(() => {
     if (!tempToken) {
@@ -34,31 +30,6 @@ function CompleteGoogleRegistration() {
     });
   }, [tempToken]);
 
-  // Cargar organizaciones una sola vez al montar (ya están en caché si se cargaron antes)
-  useEffect(() => {
-    if (!organizationsLoadedRef.current) {
-      organizationsLoadedRef.current = true;
-      loadOrganizations();
-    }
-  }, []); // Solo una vez al montar
-
-  const loadOrganizations = async () => {
-    // Si ya hay organizaciones cargadas, no hacer nada
-    if (organizations.length > 0) {
-      return;
-    }
-
-    setLoadingOrganizations(true);
-    try {
-      const data = await getOrganizations(true); // Usar caché
-      setOrganizations(data.organizations || []);
-    } catch (error) {
-      console.error('Error al cargar organizaciones:', error);
-      setOrganizations([]);
-    } finally {
-      setLoadingOrganizations(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,29 +82,31 @@ function CompleteGoogleRegistration() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="organization_name" className="text-[13px] font-semibold text-[var(--color-dark)] ml-1">
-              Empresa
+              {formData.role === 'trabajador' ? 'Código de la Empresa' : 'Nombre de la Empresa'}
             </label>
             <div className="input-wrapper relative flex items-center">
+              {formData.role === 'trabajador' ? (
+                <FontAwesomeIcon icon={faKey} className="input-icon" />
+              ) : (
               <FontAwesomeIcon icon={faBuilding} className="input-icon" />
-              <select
+              )}
+              <input
+                type="text"
                 id="organization_name"
                 name="organization_name"
                 className="form-input"
+                placeholder={formData.role === 'trabajador' ? 'ABC12345' : 'Mi Empresa S.L.'}
                 value={formData.organization_name}
                 onChange={(e) => setFormData({ ...formData, organization_name: e.target.value })}
                 required
-                disabled={loadingOrganizations}
-              >
-                <option value="">Seleccionar empresa...</option>
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.name}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
+                style={formData.role === 'trabajador' ? { textTransform: 'uppercase' } : {}}
+                maxLength={formData.role === 'trabajador' ? 20 : 255}
+              />
             </div>
             <p className="text-[11px] text-[var(--text-secondary)] mt-1">
-              Selecciona la empresa a la que perteneces
+              {formData.role === 'trabajador' 
+                ? 'Ingresa el código único de tu empresa'
+                : 'Ingresa el nombre de tu empresa'}
             </p>
           </div>
 

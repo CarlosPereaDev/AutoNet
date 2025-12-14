@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\MachineryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\AdminController;
 
 // Rutas públicas de autenticación
 Route::post('/register', [AuthController::class, 'register']);
@@ -28,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
             'user' => $request->user()->load('organization'),
         ]);
     });
+    Route::post('/user/location', [UserController::class, 'updateLocation']);
 
     // Dashboard
     Route::get('/dashboard/jefe/stats', [DashboardController::class, 'getJefeStats']);
@@ -36,8 +38,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Tareas
     Route::get('/tasks', [TaskController::class, 'index']);
     Route::get('/tasks/my', [TaskController::class, 'myTasks']);
+    Route::get('/tasks/available', [TaskController::class, 'availableTasks']);
     Route::post('/tasks', [TaskController::class, 'store']);
     Route::put('/tasks/{id}', [TaskController::class, 'update']);
+    Route::post('/tasks/{id}/reserve', [TaskController::class, 'reserveTask']);
     Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
 
     // Vehículos
@@ -57,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/workers', [UserController::class, 'store']);
     Route::put('/workers/{id}', [UserController::class, 'update']);
     Route::delete('/workers/{id}', [UserController::class, 'destroy']);
+    Route::get('/workers-location', [UserController::class, 'getWorkersLocation']);
 
     // Notificaciones
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -72,7 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/organizations/{id}', [OrganizationController::class, 'update']);
         Route::delete('/organizations/{id}', [OrganizationController::class, 'destroy']);
         Route::get('/organizations/{id}/stats', [OrganizationController::class, 'stats']);
-        
+
         Route::get('/users', [UserController::class, 'getAllUsers']);
         Route::post('/users', [UserController::class, 'createUser']);
         Route::put('/users/{id}', [UserController::class, 'updateUser']);

@@ -29,6 +29,9 @@ class User extends Authenticatable
         'provider_id',
         'avatar',
         'last_activity_at',
+        'latitude',
+        'longitude',
+        'last_location_at',
     ];
 
     /**
@@ -52,6 +55,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_activity_at' => 'datetime',
+            'last_location_at' => 'datetime',
         ];
     }
 
