@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: autonet-api
+    env: docker
+    dockerContext: back
+    dockerfilePath: back/Dockerfile
+    plan: free
+    region: ohio # puedes cambiar esto a frankfurt u oregon si lo prefieres
+    envVars:
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_DEBUG
+        value: false
+      - key: APP_ENV
+        value: production
+      - key: APP_URL
+        value: https://autonet-api.onrender.com # Se actualizará solo
+      - key: LOG_CHANNEL
+        value: stderr
+      # Base de datos (necesitarás rellenar esto después en el dashboard de Render si usas una externa o interna)
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        value: # host de tu BD (ej. TiDB o Render Postgres)
+      - key: DB_PORT
+        value: 3306
+      - key: DB_DATABASE
+        value: autonet
+      - key: DB_USERNAME
+        value: root
+      - key: DB_PASSWORD
+        value: # tu contraseña
+
+version: "1"
